@@ -1,0 +1,118 @@
+options{
+STATIC = false;
+}
+
+PARSER_BEGIN(html)
+
+package egtry.html;
+import java.io.StringReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+
+public class html {
+   public static StringBuilder str=new StringBuilder();
+	public static void main(String[] args) throws ParseException{
+         try {
+            File file = new File("PARSER.html");
+            BufferedWriter fileWriter = new BufferedWriter(new FileWriter(file));
+             String d = new egtry.html.html(System.in).create(str);
+            fileWriter.write(d.toString());
+            fileWriter.close();
+            System.out.println("Syntax is fine!");
+            System.out.println(str);
+	    }
+	    catch(Throwable e) {
+            System.out.println("Syntax Error: " + e.getMessage());
+            }
+      }
+
+}
+
+PARSER_END(html)
+
+
+SKIP: { " "|"\t" |"\r"|"\n"  }
+TOKEN: {
+    < EPSILON : ([" "]) >|
+     < #alphanumeric:(["a"-"z" ,"A"-"Z", "0"-"9","/" , ":" , ".", "_" ])+  > |
+      < sentence :< alphanumeric> >
+}
+
+String create(StringBuilder str) throws ParseException: {}
+{
+    ( "ADD " element(str))*
+    {return str.toString(); }
+    }
+void element(StringBuilder str): {}
+{
+  img(str) |  para(str) | url(str) |header(str)
+}
+void img(StringBuilder str): {Token d;}
+{
+  {str.append("<img src=\"");} "IMAGE " "WITH " "SOURCE " quote()   d=<sentence >  quote() {str.append(d).append("\" />");}
+  {System.out.println( str.toString()+"\n");}
+  }
+
+void header(StringBuilder str) throws ParseException :{}
+{
+"HEADING " {str.append("<h1 ");} {str.append("style=\" ");}decorated_text(str) {str.append("</h1>");}
+ {System.out.println( str.toString()+"\n");}
+
+}
+void para(StringBuilder str) :{}
+{
+"PARAGRAPH "{str.append("<p ");} {str.append("style=\" ");}decorated_text(str){str.append("</p>");}
+ {System.out.println( str.toString()+"\n");}
+}
+ void url(StringBuilder str) :{}
+ {
+"LINK " {str.append("<a ");} decorated_url(str){str.append("</a>");}
+ {System.out.println( str.toString()+"\n");}
+    }
+
+ void decorated_text(StringBuilder str) throws ParseException: {String k="" ; }
+  {
+  (
+     "WITH " ( k=text(str)| color(str)  | font(str))
+   [LOOKAHEAD(1) "AND "  decorated_text(str) ]   )
+                   { if(!(str.toString()).endsWith("\" >"))str.append("\" >").append(k);}
+                    {str.append(k); }
+
+
+   }
+
+
+void decorated_url(StringBuilder str): {String k1="" ;}
+ {
+   "WITH " (k1=text(str) |  ( color(str)  | font(str)) | link(str){str.append(" style=\" ");} )
+     [LOOKAHEAD(1) "AND "  decorated_url(str) ]
+          { if(!(str.toString()).endsWith("\" >"))str.append("\" >").append(k1); }
+    {str.append(k1); }
+  }
+
+void link(StringBuilder str):{Token p;}
+{
+   "LINK " quote() {str.append("href=\"");} p=<sentence > quote(){str.append(p).append("\"");}
+}
+
+String text(StringBuilder str): {Token r; }
+{
+ "TEXT " quote() r=<sentence >  quote()
+{return r.image;}
+}
+
+void color(StringBuilder str): {Token r1; }
+{
+ "COLOR " {str.append("color:");}quote() r1=<sentence > quote(){str.append(r1).append("; ");}
+
+}
+void font(StringBuilder str): { Token r2;}
+{
+ "FONT " {str.append("font-family:");}quote() r2=<sentence > quote(){str.append(r2).append(";");}
+
+}
+void quote():{}
+{
+   "\""
+}

@@ -1,0 +1,102 @@
+options{
+STATIC = false;
+}
+PARSER_BEGIN(html)
+
+package egtry.html;
+import java.io.StringReader;
+
+
+public class html {
+  
+    public static void main(String[] args) throws Exception {
+     try {
+            new html(new StringReader(args[0])).create();
+            System.out.println("Syntax is okay");
+            
+        } catch (Throwable e) {
+            System.out.println("Syntax check failed: "+ e.getMessage() );
+        }
+    }
+    
+}
+
+PARSER_END(html)
+
+ 
+SKIP: { " " |"\t" |"\r" }
+TOKEN: {
+          "/" | ":" | "." |
+    <NUM: (["0"-"9"])+> | <ID: (["a"-"z"])+  >| < CAP :(["A"-"Z"]) > | < EPSILON : ([" "])> | < NewLine: (["\n"])>
+}
+
+void create() throws ParseException: {}
+{
+    "ADD"  element()  <NewLine >
+}
+
+void element(): {}
+{
+  img() |  para() | url() |header() 
+}
+void img(): { }
+{
+  "IMAGE" "WITH" "SOURCE" quote() sentence() quote()
+  }
+void header() throws ParseException :{}
+{
+"HEADING" decorated_text()
+  
+}
+void para() :{}
+{
+"PARAGRAPH" decorated_text()
+  
+  }
+ void url() :{}
+ {
+"LINK" decorated_url()
+   
+    }
+
+ void decorated_text() throws ParseException: { }
+  {
+   "WITH" ( text()| color() |  font()) [LOOKAHEAD(1) "AND"  decorated_text() ]
+   }
+void decorated_url(): {}
+ {
+   "WITH" (text() |  color() |  font() |link() )  [LOOKAHEAD(1) "AND"  decorated_url() ]
+  }
+void link():{}
+{
+   "LINK" quote() sentence() quote()
+}
+
+void text(): { }
+{
+ "TEXT" quote() sentence() quote()
+  
+}
+void color(): { }
+{
+ "COLOR" quote() sentence() quote()
+  
+}
+void font(): { }
+{
+ "FONT" quote() sentence() quote()
+  
+}
+void sentence(): { }
+{
+alphanumeric() [LOOKAHEAD(sentence()) sentence()| < EPSILON >]
+  
+}
+void quote():{}
+{
+   "\""
+}
+void alphanumeric()throws ParseException:{}
+{
+ < NUM > |< ID > | <CAP> | "/" | ":" | "." | "_"|< EPSILON >
+}
